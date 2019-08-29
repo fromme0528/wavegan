@@ -105,7 +105,7 @@ def inception_score(
     _all_activations_real = []
     _all_activations_fake = []
     for i in xrange(0, len(audio_fps_real), batch_size):
-      batch_real = audio_fps_real[i:i+batch_size]
+        batch_real = audio_fps_real[i:i+batch_size]
         batch_fake = audio_fps_fake[i:i+batch_size]
 
         # Load audio files
@@ -303,10 +303,3 @@ if __name__ == '__main__':
             labels_txt.append(','.join([audio_fp, str(label)]))
         with open(args.labels_fp, 'w') as f:
             f.write('\n'.join(labels_txt))
-        
-
-
-    
-    
-
-
