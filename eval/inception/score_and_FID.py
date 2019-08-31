@@ -322,5 +322,5 @@ if __name__ == '__main__':
         for _class in range(10):
             for idx in _all_indexes_fake[_class]:
                 labels_txt.append(','.join([audio_fps[idx],str(_class)]))
-        with open(args.labels_fp+"_top", 'w') as f:
+        with open(args.labels_fp[:-4]+"_top.txt", 'w') as f:
             f.write('\n'.join(labels_txt))
