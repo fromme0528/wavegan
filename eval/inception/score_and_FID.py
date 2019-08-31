@@ -6,14 +6,14 @@ from scipy import linalg
 from six.moves import xrange
 
 
-# this function is taken from 
+# this function is taken from
 # https://github.com/bioinf-jku/TTUR/blob/master/fid.py
 def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
     """Numpy implementation of the Frechet Distance.
     The Frechet distance between two multivariate Gaussians X_1 ~ N(mu_1, C_1)
     and X_2 ~ N(mu_2, C_2) is
             d^2 = ||mu_1 - mu_2||^2 + Tr(C_1 + C_2 - 2*sqrt(C_1*C_2)).
-            
+
     Stable version by Dougal J. Sutherland.
     Params:
     -- mu1 : Numpy array containing the activations of the pool_3 layer of the
@@ -34,7 +34,7 @@ def calculate_frechet_distance(mu1, sigma1, mu2, sigma2, eps=1e-6):
 
     sigma1 = np.atleast_2d(sigma1)
     sigma2 = np.atleast_2d(sigma2)
-    
+
     assert mu1.shape == mu2.shape, "Training and test mean vectors have different lengths"
     assert sigma1.shape == sigma2.shape, "Training and test covariances have different dimensions"
 
@@ -69,8 +69,9 @@ def inception_score(
         ckpt_fp,
         batch_size=100,
         tf_ffmpeg_ext=None,
-        fix_length=False):
-        
+        fix_length=False,
+        topN=300):
+
         # Compute IS and FID scores
     use_tf_ffmpeg = tf_ffmpeg_ext is not None
     if not use_tf_ffmpeg:
@@ -203,14 +204,25 @@ def inception_score(
 
     fid = calculate_frechet_distance(mu_real, sigma_real, mu_fake, sigma_fake)
 
+    _all_indexes_fake = list()
+    for i in range(10):
+        _all_indexes_fake.append(findTopN(_inception_scores_fake,i,topN))
+
     ret = (np.mean(_inception_scores_fake),
            np.std(_inception_scores_fake),
            _all_labels_fake,
            np.mean(_inception_scores_real),
            np.std(_inception_scores_real),
            _all_labels_real,
-           fid)
+           fid,
+           _all_indexes_fake)
     return ret
+
+def findTopN(lst, classNum, n):
+    upperN = sorted(lst, key = lambda x : x[classNum],reverse=True)[n+1][classNum]
+    result = [i for i,x in enumerate(lst) if x[classNum]>upperN]
+    result = result[:n]
+    return result
 
 if __name__ == '__main__':
     import argparse
@@ -240,6 +252,7 @@ if __name__ == '__main__':
             help='Evaluate audio in batches of this size')
     parser.add_argument('--tf_ffmpeg_ext', type=str,
             help='If set, uses ffmpeg to decode audio files with specified extension through tensorflow')
+    parser.add_argument('--topN', type=int,default=300)
 
     parser.set_defaults(
         audio_dir=None,
@@ -278,7 +291,7 @@ if __name__ == '__main__':
     print(len(real_audio_fps))
 
     # Compute scores
-    fake_mean, fake_std, fake_labels, real_mean, real_std, real_labels, fid = inception_score(
+    fake_mean, fake_std, fake_labels, real_mean, real_std, real_labels, fid, _all_indexes_fake = inception_score(
     real_audio_fps,
             audio_fps,
             args.k,
@@ -286,7 +299,8 @@ if __name__ == '__main__':
             args.ckpt_fp,
             batch_size=args.batch_size,
             tf_ffmpeg_ext=args.tf_ffmpeg_ext,
-            fix_length=args.fix_length)
+            fix_length=args.fix_length,
+            topN=args.topN)
     print('Real inception score: {} +- {}'.format(real_mean, real_std))
     print('Fake inception score: {} +- {}'.format(fake_mean, fake_std))
     print('FID score: {}'.format(fid))
@@ -302,4 +316,11 @@ if __name__ == '__main__':
         for audio_fp, label in zip(audio_fps, fake_labels):
             labels_txt.append(','.join([audio_fp, str(label)]))
         with open(args.labels_fp, 'w') as f:
+            f.write('\n'.join(labels_txt))
+    if args.labels_fp is not None:
+        labels_txt = []
+        for _class in range(10):
+            for idx in _all_indexes_fake[_class]:
+                labels_txt.append(','.join([audio_fps[idx],str(_class)]))
+        with open(args.labels_fp+"_top", 'w') as f:
             f.write('\n'.join(labels_txt))
