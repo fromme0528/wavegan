@@ -219,9 +219,18 @@ def inception_score(
     return ret
 
 def findTopN(lst, classNum, n):
-    upperN = sorted(lst, key = lambda x : x[classNum],reverse=True)[n+1][classNum]
+    upperN = sorted(lst, key = lambda x : x[classNum],reverse=True)[n][classNum]
     result = [i for i,x in enumerate(lst) if x[classNum]>upperN]
+
+    for temp in [i for i,x in enumerate(lst) if x[classNum]==upperN]:
+        result.append(temp)
+
     result = result[:n]
+
+#    upperN = sorted(lst, key = lambda x : x[classNum],reverse=True)[n+1][classNum]
+#    result = [i for i,x in enumerate(lst) if x[classNum]>upperN]
+#    result = result[:n]
+
     return result
 
 if __name__ == '__main__':
