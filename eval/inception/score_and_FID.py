@@ -206,7 +206,7 @@ def inception_score(
 
     _all_indexes_fake = list()
     for i in range(10):
-        _all_indexes_fake.append(findTopN(_inception_scores_fake,i,topN))
+        _all_indexes_fake.append(findTopN(_all_scores_fake,i,topN))
 
     ret = (np.mean(_inception_scores_fake),
            np.std(_inception_scores_fake),
