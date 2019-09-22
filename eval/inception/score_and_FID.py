@@ -207,6 +207,10 @@ def inception_score(
     _all_indexes_fake = list()
     for i in range(10):
         _all_indexes_fake.append(findTopN(_all_scores_fake,i,topN))
+    _all_indexes_fake_10 = list()
+    for i in range(10):
+        _all_indexes_fake_10.append(findTopN(_all_scores_fake,i,10))
+    
 
     ret = (np.mean(_inception_scores_fake),
            np.std(_inception_scores_fake),
@@ -215,7 +219,7 @@ def inception_score(
            np.std(_inception_scores_real),
            _all_labels_real,
            fid,
-           _all_indexes_fake)
+           _all_indexes_fake, _all_indexes_fake_10)
     return ret
 
 def findTopN(lst, classNum, n):
@@ -261,7 +265,7 @@ if __name__ == '__main__':
             help='Evaluate audio in batches of this size')
     parser.add_argument('--tf_ffmpeg_ext', type=str,
             help='If set, uses ffmpeg to decode audio files with specified extension through tensorflow')
-    parser.add_argument('--topN', type=int,default=300)
+    parser.add_argument('--topN', type=int, default=300)
 
     parser.set_defaults(
         audio_dir=None,
@@ -300,7 +304,7 @@ if __name__ == '__main__':
     print(len(real_audio_fps))
 
     # Compute scores
-    fake_mean, fake_std, fake_labels, real_mean, real_std, real_labels, fid, _all_indexes_fake = inception_score(
+    fake_mean, fake_std, fake_labels, real_mean, real_std, real_labels, fid, _all_indexes_fake,_all_indexes_fake_10 = inception_score(
     real_audio_fps,
             audio_fps,
             args.k,
@@ -331,5 +335,12 @@ if __name__ == '__main__':
         for _class in range(10):
             for idx in _all_indexes_fake[_class]:
                 labels_txt.append(','.join([audio_fps[idx],str(_class)]))
-        with open(args.labels_fp[:-4]+"_top.txt", 'w') as f:
+        with open(args.labels_fp[:-4]+"_top_300.txt", 'w') as f:
+            f.write('\n'.join(labels_txt))
+            
+        labels_txt = []
+        for _class in range(10):
+            for idx in _all_indexes_fake_10[_class]:
+                labels_txt.append(','.join([audio_fps[idx],str(_class)]))
+        with open(args.labels_fp[:-4]+"_top_10.txt", 'w') as f:
             f.write('\n'.join(labels_txt))
